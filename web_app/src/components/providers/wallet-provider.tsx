@@ -58,14 +58,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    syncWallet();
+    const initialSync = setTimeout(syncWallet, 0);
     const wallet = window.solana;
-    if (!wallet) return;
+    if (!wallet) return () => clearTimeout(initialSync);
 
     wallet.on("connect", syncWallet);
     wallet.on("disconnect", syncWallet);
 
     return () => {
+      clearTimeout(initialSync);
       wallet.off("connect", syncWallet);
       wallet.off("disconnect", syncWallet);
     };

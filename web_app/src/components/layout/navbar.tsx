@@ -7,6 +7,7 @@ import { WalletButton } from "@/components/wallet/wallet-button";
 import { Badge } from "@/components/ui/badge";
 
 const navLinks = [
+  { href: "/demo", label: "Demo" },
   { href: "/marketplace", label: "Marketplace" },
   { href: "/compute", label: "Compute" },
   { href: "/dashboard", label: "Dashboard" },
@@ -45,10 +46,10 @@ export function Navbar() {
             Devnet
           </Badge>
           <Link
-            href="/dashboard"
+            href="/demo"
             className="hidden rounded-sm bg-primary px-4 py-2 font-mono text-[11px] font-semibold uppercase tracking-widest text-primary-foreground transition-colors hover:bg-primary/80 sm:inline-flex"
           >
-            Launch App
+            Launch Demo
           </Link>
           <WalletButton />
         </div>

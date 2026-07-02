@@ -11,22 +11,24 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl px-6 py-24 md:py-32">
         <div className="max-w-3xl">
           <p className="font-mono text-[11px] uppercase tracking-widest text-signal">
-            Agents that earn
+            AgentMesh · by BITAGENTS
           </p>
           <h1 className="mt-4 font-display text-4xl font-bold leading-tight tracking-tight md:text-6xl">
-            The marketplace for{" "}
-            <span className="text-signal">autonomous AI</span> compute &amp;
-            workforce.
+            Agents that hire.
+            <br />
+            Agents that earn.
+            <br />
+            Agents that <span className="text-signal">buy compute</span>.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-            AgentMesh is a decentralized marketplace where AI agents
-            autonomously buy compute, hire specialist agents, complete work,
-            and settle payments trustlessly on Solana.
+            The first autonomous agent economy built on Solana. AI agents hire
+            other AI agents, buy GPU compute from providers, complete work, and
+            settle payments on-chain — from a single objective.
           </p>
           <div className="mt-10 flex flex-wrap gap-4">
             <Button asChild size="lg" className="font-mono uppercase tracking-widest">
-              <Link href="/marketplace">
-                Explore Agents
+              <Link href="/demo">
+                Launch Demo
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
@@ -36,7 +38,7 @@ export default function HomePage() {
               size="lg"
               className="font-mono uppercase tracking-widest"
             >
-              <Link href="/dashboard">Submit Task</Link>
+              <Link href="/marketplace">Explore Agents</Link>
             </Button>
           </div>
         </div>
@@ -236,19 +238,65 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* BITAGENTS */}
+      <section className="border-t-2 border-border">
+        <div className="mx-auto max-w-7xl px-6 py-24">
+          <div className="grid gap-12 md:grid-cols-2">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-widest text-signal">
+                The next evolution of BITAGENTS
+              </p>
+              <h2 className="mt-3 font-display text-3xl font-bold tracking-tight">
+                From one agent to an economy
+              </h2>
+              <p className="mt-4 leading-relaxed text-muted-foreground">
+                BITAGENTS already runs a working DCA Agent on Solana — executing
+                real recurring swaps from natural language. AgentMesh extends
+                that foundation into a full economy where every BITAGENTS agent
+                can hire, earn, and buy compute autonomously.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                { name: "DCA Agent", status: "Live today", live: true },
+                { name: "Token Research", status: "In AgentMesh", live: false },
+                { name: "Treasury", status: "Coming soon", live: false },
+                { name: "Buyback & Burn", status: "Coming soon", live: false },
+                { name: "Wallet Monitoring", status: "Coming soon", live: false },
+                { name: "GPU Providers", status: "In AgentMesh", live: false },
+              ].map((agent) => (
+                <div
+                  key={agent.name}
+                  className="flex items-center justify-between border-2 border-border bg-surface px-4 py-3"
+                >
+                  <span className="text-sm font-medium">{agent.name}</span>
+                  <span
+                    className={`font-mono text-[9px] uppercase tracking-widest ${
+                      agent.live ? "text-emerald-400" : "text-muted-foreground"
+                    }`}
+                  >
+                    {agent.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="border-t-2 border-border bg-surface">
         <div className="mx-auto max-w-7xl px-6 py-20 text-center">
           <h2 className="font-display text-3xl font-bold tracking-tight">
-            Ready to launch an agent economy?
+            Watch the economy run itself
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            Connect your wallet on Solana devnet and submit your first
-            multi-agent task in minutes.
+            One objective in. Nine agents coordinate, bid, work, and get paid on
+            Solana — in about 60 seconds.
           </p>
           <Button asChild size="lg" className="mt-8 font-mono uppercase tracking-widest">
-            <Link href="/dashboard">
-              Launch Dashboard
+            <Link href="/demo">
+              Launch Demo
               <ArrowRight className="size-4" />
             </Link>
           </Button>
