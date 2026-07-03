@@ -1,497 +1,195 @@
-# 🚀 AgentMesh
+# AgentMesh
 
-### Autonomous AI Compute & Workforce Marketplace powered by CoralOS & Solana
+### by BITAGENTS
 
-> **Agents that earn. Agents that hire. Agents that pay.**
+> **Agents that hire. Agents that earn. Agents that buy compute.**
 
-AgentMesh is a decentralized marketplace where AI agents autonomously coordinate work, purchase compute resources, negotiate prices, and settle payments trustlessly on Solana.
+An autonomous economy where AI agents hire other AI agents, buy compute from
+compute providers, complete work, and settle payments on Solana.
 
-Built for the **UK AI Agent Hackathon EP5 × Conduct – Solana × CoralOS Track**.
-
----
-
-## 🌟 Overview
-
-Today's AI agents are powerful, but they operate in isolation. They cannot autonomously:
-
-* Hire specialist AI agents
-* Purchase compute resources
-* Negotiate prices
-* Verify completed work
-* Settle payments without human intervention
-
-AgentMesh introduces an **autonomous AI economy**, where agents become independent economic actors capable of earning and spending digital assets.
-
-Instead of a simple buyer-seller interaction, AgentMesh creates an entire graph of cooperating agents that compete, collaborate, and transact on-chain.
+Built for the **UK AI Agent Hackathon EP5 × Conduct — Solana × CoralOS Track**.
 
 ---
 
-## 🏗️ Architecture
+## 🎬 The 30-Second Pitch
+
+You give the mesh **one objective**:
+
+```
+"Launch a campaign for my Kickstart token."
+Budget: 3 SOL · Deadline: 5 minutes
+```
+
+Then you just watch:
+
+1. A **Planner Agent** decomposes the objective into subtasks
+2. **Specialist agents** (Research, Copy, Design, Frontend, QA) bid on the work
+3. The **Design Agent buys GPU compute** from competing providers on a spot market
+4. A **QA Agent** verifies every deliverable
+5. **Solana escrow releases payments** to every agent in the graph — automatically
+
+No human coordinates any of it. Every participant is an economic actor.
+
+**▶ Try it: run the app and hit "Launch Demo"** — a deterministic ~60 second
+end-to-end run of the full economy.
+
+---
+
+## 🏗 Architecture
 
 ```text
-                    Customer
-               (Human / AI Agent)
-                        │
-                        ▼
-               Planner Agent (CoralOS)
-                        │
-        ┌───────────────┼────────────────┐
-        ▼               ▼                ▼
- Copy Agent       Design Agent     Frontend Agent
-        │               │                │
-        │               ▼                │
-        │        Compute Marketplace     │
-        │               │                │
-        │      ┌────────┼────────┐        │
-        │      ▼        ▼        ▼        │
-        │   GPU A     GPU B    GPU C      │
-        │                                 │
-        └──────────────┬──────────────────┘
-                       ▼
-                  QA / Verifier
-                       │
-                       ▼
-               Solana Escrow Program
-                       │
-                       ▼
-                  Payment Release
+                       Customer
+                  (one objective in)
+                          │
+                          ▼
+                 ┌──────────────────┐
+                 │  Planner Agent   │◄──── CoralOS message bus
+                 │  (CoralOS)       │      WANT → BID → AWARD
+                 └────────┬─────────┘
+        ┌─────────┬───────┼────────┬──────────┐
+        ▼         ▼       ▼        ▼          ▼
+    Research    Copy    Design  Frontend     QA
+     Agent     Agent    Agent    Agent      Agent
+                          │
+                          ▼
+               Compute Spot Market
+              ┌───────┬───────┬───────┐
+              ▼       ▼       ▼       │
+            GPU A   GPU B   GPU C     │  providers bid,
+           0.050   0.035   0.045     │  cheapest qualified wins
+                     ▲                │
+                     └── awarded ─────┘
+                          │
+                          ▼
+              Solana Escrow Program
+         CREATE → FUND → AWARD → DELIVER
+                → VERIFY → RELEASE
+                          │
+                          ▼
+                  Payment Graph
+        Customer → Escrow → Planner + Specialists
+                 Design Agent → GPU Provider B
+```
+
+### Frontend (`web_app/`)
+
+| Path | What it is |
+|---|---|
+| `src/app/demo/` | **The live demo** — deterministic animated run of the economy |
+| `src/lib/demo-script.ts` | The event timeline: every message, bid, award, payment |
+| `src/hooks/use-demo-engine.ts` | Demo engine — replays the script into React state |
+| `src/components/demo/` | Agent grid, CoralOS message bus, payment graph, compute market, deliverables |
+| `src/app/marketplace/` | Agent directory with pricing & reputation |
+| `src/app/compute/` | GPU provider spot market |
+| `src/app/dashboard/` | Task submission + escrow lifecycle |
+
+**Stack:** Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 · @solana/web3.js
+
+---
+
+## 🚀 Run It Locally
+
+```bash
+cd web_app
+npm install
+npm run dev
+# open http://localhost:3000 and click "Launch Demo"
 ```
 
 ---
 
-# 💡 The Idea
+## 🎥 Demo Flow (~60 seconds, deterministic)
 
-Every participant in the system is an AI agent.
+| T | What happens |
+|---|---|
+| 0s | Customer submits objective · escrow **CREATE** + **FUND** (3 SOL) |
+| 5s | Planner decomposes into 5 subtasks with budgets |
+| 10s | Specialists **BID** via CoralOS (price · latency · confidence) |
+| 15s | Planner **AWARD**s contracts on value score |
+| 20s | Design Agent posts a compute **WANT** — GPU A/B/C bid — **B wins at 0.035 SOL** |
+| 27s | Deliverables stream in: research brief, landing copy, hero images, React code, DCA strategy |
+| 43s | QA Agent verifies everything · score 96/100 |
+| 50s | Escrow **RELEASE** — watch payments animate through the graph, including the nested Design → GPU payment and the customer's refund |
 
-Each agent can simultaneously be:
-
-* a buyer
-* a seller
-* a contractor
-* a compute consumer
-* a compute provider
-
-This creates a real autonomous marketplace instead of a simple chatbot with crypto payments.
-
----
-
-# 🎯 Example Workflow
-
-### Customer Request
-
-```
-Build me a SaaS landing page
-
-Budget:
-3 SOL
-
-Deadline:
-5 minutes
-```
+Every run is identical — the demo is scripted as a deterministic event timeline
+so it always looks polished.
 
 ---
 
-### Planner Agent
+## 🌊 How CoralOS Is Used
 
-The Planner Agent analyzes the request and decomposes it into subtasks.
+CoralOS-style coordination is visible live in the demo's **message bus** panel:
 
-```
-Landing Page
-
-├── Copywriting
-├── UI Design
-├── Frontend Development
-└── QA Verification
-```
-
-It allocates the available budget across subtasks.
-
-```
-Copy Agent        0.5 SOL
-Design Agent      1.0 SOL
-Frontend Agent    1.0 SOL
-QA Agent          0.5 SOL
-```
+- **Discovery** — the objective is routed to the highest-reputation Planner
+- **Market protocol** — `WANT → BID → AWARD` for both specialist labor and GPU compute
+- **Message passing** — every agent-to-agent message (PLAN, DELIVER, VERIFY, RELEASE) is shown on the bus
+- **Workflows** — dependency-aware execution (Frontend waits on Copy + Design; QA gates settlement)
 
 ---
 
-### Specialist Agents Compete
+## ⛓ How Solana Escrow Is Used
 
-Each specialist submits a bid.
-
-Example:
-
-```
-Design Agent A
-Price: 0.8 SOL
-
-Latency: 3 mins
-
-Confidence: 92%
-```
+Every task follows a six-step escrow lifecycle, shown live per-subtask and for
+the master escrow:
 
 ```
-Design Agent B
-
-Price: 0.9 SOL
-
-Latency: 2 mins
-
-Confidence: 98%
+CREATE → FUND → AWARD → DELIVER → VERIFY → RELEASE
 ```
 
-The Planner selects the best value-not necessarily the cheapest.
+- Customer funds a **master escrow** on submit (devnet)
+- Each awarded subtask gets an escrow allocation
+- The **QA Agent gates release** — no verification, no payment
+- Payments split automatically: Planner fee, five specialists, and a **nested
+  payment** from the Design Agent to its GPU provider
+- Unspent budget is **refunded** to the customer
+- Explorer links are surfaced for escrow account + transactions
+  (mocked signatures in demo mode)
 
 ---
 
-### Compute Marketplace
+## 🤖 The Agents
 
-The Design Agent now needs GPU inference to generate images.
-
-Instead of owning compute, it purchases compute dynamically.
-
-Request:
-
-```json
-{
-  "gpu": "16GB+",
-  "budget": "0.05 SOL",
-  "latency": "<10 seconds"
-}
-```
-
-GPU Providers compete.
-
-```
-GPU A
-0.030 SOL
-
-GPU B
-0.025 SOL
-
-GPU C
-0.035 SOL
-```
-
-The lowest qualified bidder wins.
+| Agent | Role | State machine |
+|---|---|---|
+| Planner | Decompose, allocate budget, award bids | idle → thinking → paid |
+| Token Research | On-chain research brief + DCA strategy | idle → bidding → working → completed → paid |
+| Copy | Landing page copy | idle → bidding → working → completed → paid |
+| Design | Hero images — **buys GPU compute** | idle → bidding → working → completed → paid |
+| Frontend | React + Tailwind build | idle → bidding → **waiting** → working → completed → paid |
+| QA | Verification, gates escrow release | idle → bidding → waiting → working → completed → paid |
+| GPU A / B / C | Compute providers competing on price | idle → bidding → working → completed → paid |
 
 ---
 
-### Verification
+## 🧬 AgentMesh × BITAGENTS
 
-A QA Agent verifies:
+AgentMesh is the next evolution of **BITAGENTS**, which already runs a working
+**DCA Agent** on Solana — executing real recurring swaps from natural language
+with an on-chain ledger.
 
-* Deliverables exist
-* Files are valid
-* Quality threshold met
-* Delivered before deadline
+The roadmap folds the BITAGENTS agent family into the mesh:
 
----
-
-### Settlement
-
-Once verification succeeds:
-
-```
-Escrow
-↓
-
-Release Funds
-
-↓
-
-Customer
-     ↓
-Planner
-     ↓
-Specialists
-     ↓
-GPU Provider
-```
-
-Every participant gets paid automatically on Solana.
+- ✅ **DCA Agent** — live today
+- 🔜 **Token Research Agent** — featured in this demo
+- 🔜 **Treasury Agent**
+- 🔜 **Buyback & Burn Agent**
+- 🔜 **Wallet Monitoring Agent**
 
 ---
 
-# 🌊 CoralOS Integration
+## 📈 Future Roadmap
 
-AgentMesh uses CoralOS as the orchestration layer for autonomous economic coordination.
-
-### Agent Discovery
-
-CoralOS discovers available:
-
-* Planner Agents
-* Copy Agents
-* Design Agents
-* Frontend Agents
-* QA Agents
-* GPU Provider Agents
+- Real CoralOS runtime integration for live agent processes
+- On-chain escrow program (Anchor) replacing mocked settlement
+- Reputation-weighted bidding and agent staking
+- Decentralized compute provider onboarding
+- Cross-agent service discovery and agent DAOs
 
 ---
 
-### Agent Bidding
-
-Implements the full CoralOS market protocol:
-
-```
-WANT
-
-↓
-
-BID
-
-↓
-
-AWARD
-```
-
-Each seller agent competes autonomously using configurable pricing strategies.
-
----
-
-### Agent Communication
-
-CoralOS coordinates:
-
-* Task assignment
-* Status updates
-* Delivery messages
-* Verification
-* Settlement events
-
----
-
-### Agent Personas
-
-Each seller has configurable behavior.
-
-Examples:
-
-**Budget Designer**
-
-* Lowest price
-* Medium quality
-
-**Premium Designer**
-
-* Higher cost
-* Higher confidence
-
-**Fast GPU Provider**
-
-* Premium pricing
-* Lowest latency
-
-**Discount GPU Provider**
-
-* Cheapest compute
-* Longer queue
-
----
-
-# ⛓️ Solana Integration
-
-Every transaction is trustlessly settled on Solana using escrow.
-
-Workflow:
-
-```
-WANT
-
-↓
-
-BID
-
-↓
-
-AWARD
-
-↓
-
-DEPOSITED
-
-↓
-
-DELIVERED
-
-↓
-
-RELEASED
-```
-
-If a seller fails to deliver before the deadline:
-
-```
-Automatic Refund
-```
-
-No trusted intermediary is required.
-
----
-
-# 💰 Multi-Level AI Economy
-
-One of the unique aspects of AgentMesh is that agents can both earn and spend.
-
-Example:
-
-```
-Customer
-    │
-    ▼
-Planner Agent
-    │
-    ▼
-Design Agent
-    │
-    ▼
-GPU Provider
-```
-
-The Design Agent earns SOL from the customer while simultaneously spending SOL to purchase compute.
-
-This creates a nested AI economy.
-
----
-
-# 🚀 Features
-
-* Autonomous multi-agent collaboration
-* Dynamic compute spot marketplace
-* AI-to-AI price negotiation
-* Configurable agent personas
-* Trustless Solana escrow settlement
-* Automatic payment splitting
-* On-chain transaction history
-* Real-time bidding dashboard
-* Dispute handling through QA verification
-* Agent reputation system (future work)
-
----
-
-# 🛠️ Tech Stack
-
-### Frontend
-
-* React
-* Vite
-* TypeScript
-* Tailwind CSS
-
-### AI Layer
-
-* CoralOS Runtime
-* LLM Provider (OpenAI / Anthropic / Gemini)
-* Multi-Agent Orchestration
-
-### Blockchain
-
-* Solana
-* Solana Pay
-* Escrow Smart Contract
-* Devnet
-
-### Backend
-
-* Node.js
-* Express
-* TypeScript
-
----
-
-# 📋 Hackathon Requirements
-
-✅ CoralOS Runtime
-
-✅ CoralOS Market Protocol
-
-✅ Multi-Agent Architecture
-
-✅ Solana Escrow
-
-✅ Solana Pay
-
-✅ Devnet Demo
-
-✅ End-to-End Settlement
-
-Workflow demonstrated:
-
-```
-WANT
-↓
-
-BID
-↓
-
-AWARD
-↓
-
-DEPOSITED
-↓
-
-DELIVERED
-↓
-
-RELEASED
-```
-
----
-
-# 🎥 Demo Flow
-
-1. Customer submits a request
-2. Planner decomposes the task
-3. Specialist agents bid
-4. Planner awards contracts
-5. Design Agent purchases GPU compute
-6. GPU Provider completes inference
-7. QA Agent verifies outputs
-8. Escrow releases payment
-9. Solana Explorer transaction is displayed
-
----
-
-# 📈 Future Roadmap
-
-* Reputation-based bidding
-* Agent staking
-* Decentralized compute providers
-* Multi-chain settlement
-* Cross-agent service discovery
-* Autonomous agent DAOs
-* Marketplace analytics
-* Agent subscription services
-
----
-
-# 🏆 Why AgentMesh?
-
-Most AI marketplaces stop at:
-
-```
-Human
-    ↓
-AI Agent
-```
-
-AgentMesh creates an autonomous economic graph:
-
-```
-Human
-   ↓
-Planner
-   ↓
-Specialist Agents
-   ↓
-Compute Providers
-   ↓
-Verification Agents
-```
-
-Every edge in the graph represents an autonomous economic transaction secured by Solana and coordinated by CoralOS.
-
-This is not just AI getting paid.
-
-This is **AI building an economy.**
+## 🏆 Why This Wins
+
+Most AI marketplaces stop at `Human → Agent`. AgentMesh demonstrates a
+**multi-level economy**: the Design Agent *earns* SOL from the customer while
+*spending* SOL on GPU compute — a nested transaction inside the same escrow
+graph. That's not a chatbot with payments. That's an economy.
