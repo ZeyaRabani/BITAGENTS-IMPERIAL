@@ -1,10 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import {
+  useConnection,
+  useWallet,
+} from "@solana/wallet-adapter-react";
+import { PublicKey } from "@solana/web3.js";
 import { AgentGraph } from "@/components/agent-mesh/agent-graph";
 import { SettlementScreen } from "@/components/agent-mesh/settlement-screen";
 import { LiveSteps } from "@/components/agent-mesh/live-steps";
@@ -12,70 +15,145 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { hireAgentLogs, hireTimelineSteps } from "@/lib/agentMeshMockData";
+import {
+  createHireTask,
+  fundHireTask,
+  getHireJob,
+  type HireJobResponse,
+} from "@/lib/agentMeshApi";
+import { sendDevnetSol, fundHireTaskWithRetry, waitForSignature } from "@/lib/agentMeshSolanaClient";
 import { AGENT_MESH_BASE } from "@/lib/agentMeshRoutes";
 import { cn } from "@/lib/utils";
 
-type Phase = "form" | "executing" | "settlement";
+type Phase = "form" | "funding" | "executing" | "settlement";
+
+function graphPhaseFromStep(
+  index: number
+): "idle" | "planning" | "specialists" | "compute" | "done" {
+  if (index < 4) return "planning";
+  if (index < 7) return "specialists";
+  if (index === 7) return "compute";
+  return "done";
+}
 
 export default function AgentMeshHirePage() {
-  const { connected } = useWallet();
+  const { connected, publicKey, sendTransaction } = useWallet();
+  const { connection } = useConnection();
   const [phase, setPhase] = useState<Phase>("form");
   const [task, setTask] = useState(
     "Buy EasyA token - it shows strong long-term potential.\n" +
       "Hire agents to run market research and token analysis, then place a buy order if conviction holds."
   );
-  const [budget, setBudget] = useState("0.5");
+  const [budget, setBudget] = useState("0.01");
   const [deadline, setDeadline] = useState("24");
-  const [graphPhase, setGraphPhase] = useState<
-    "idle" | "planning" | "specialists" | "compute" | "done"
-  >("idle");
-  const [spent, setSpent] = useState(0);
-  const [visibleLogs, setVisibleLogs] = useState(0);
-  const [executionDone, setExecutionDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [job, setJob] = useState<HireJobResponse | null>(null);
 
-  const handleLaunch = () => {
-    setPhase("executing");
-    setGraphPhase("planning");
-    setSpent(0);
-    setVisibleLogs(0);
-    setExecutionDone(false);
-  };
-
-  const handleExecutionComplete = useCallback(() => {
-    setExecutionDone(true);
-    setGraphPhase("done");
-    setSpent(0.41);
-    setTimeout(() => setPhase("settlement"), 2000);
+  const pollJob = useCallback(async (jobId: string) => {
+    const { job: next } = await getHireJob(jobId);
+    setJob(next);
+    return next;
   }, []);
 
   useEffect(() => {
-    if (phase !== "executing") return;
-    const timers = [
-      setTimeout(() => setGraphPhase("specialists"), 3000),
-      setTimeout(() => setGraphPhase("compute"), 7000),
-      setTimeout(() => setSpent(0.18), 4000),
-      setTimeout(() => setSpent(0.29), 6000),
-      setTimeout(() => setSpent(0.41), 9000),
-    ];
-    return () => timers.forEach(clearTimeout);
-  }, [phase]);
+    if (
+      phase !== "executing" ||
+      !job?.id ||
+      job.status === "completed" ||
+      job.status === "failed"
+    ) {
+      return;
+    }
 
-  useEffect(() => {
-    if (phase !== "executing") return;
-    const interval = setInterval(() => {
-      setVisibleLogs((prev) => {
-        if (prev >= hireAgentLogs.length) {
+    const interval = setInterval(async () => {
+      try {
+        const next = await pollJob(job.id);
+        if (next.status === "completed") {
           clearInterval(interval);
-          return prev;
+          setPhase("settlement");
         }
-        return prev + 1;
-      });
-    }, 2200);
-    return () => clearInterval(interval);
-  }, [phase]);
+        if (next.status === "failed") {
+          clearInterval(interval);
+          setError(next.error ?? "Hire job failed");
+        }
+      } catch (err) {
+        setError((err as Error).message);
+        clearInterval(interval);
+      }
+    }, 1000);
 
+    return () => clearInterval(interval);
+  }, [phase, job?.id, job?.status, pollJob]);
+
+  const handleLaunch = async () => {
+    if (!publicKey || !sendTransaction) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const budgetSol = Number(budget);
+      const { job: created, treasuryAddress } = await createHireTask({
+        customerWallet: publicKey.toBase58(),
+        task,
+        budgetSol,
+        deadlineHours: Number(deadline),
+      });
+
+      setJob(created);
+      setPhase("funding");
+
+      const fundingSignature = await sendDevnetSol({
+        connection,
+        from: publicKey,
+        to: new PublicKey(treasuryAddress),
+        amountSol: budgetSol,
+        sendTransaction,
+      });
+
+      await waitForSignature(connection, fundingSignature);
+
+      await fundHireTaskWithRetry(async (signature) => {
+        const { job: funded } = await fundHireTask({
+          id: created.id,
+          fundingSignature: signature,
+          customerWallet: publicKey.toBase58(),
+        });
+        setJob(funded);
+      }, fundingSignature);
+
+      setPhase("executing");
+    } catch (err) {
+      setError((err as Error).message);
+      setPhase("form");
+      setJob(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const stepIndex =
+    job?.status === "running" || job?.status === "completed"
+      ? Math.max(0, job.currentStepIndex)
+      : -1;
+
+  const graphPhase = useMemo(() => {
+    if (phase === "form") return "idle";
+    if (phase === "settlement") return "done";
+    if (!job) return "planning";
+    if (job.status === "completed") return "done";
+    return graphPhaseFromStep(job.currentStepIndex);
+  }, [phase, job]);
+
+  const spent = job?.spentSol ?? (job?.logs.length ?? 0) * 0.001;
   const remaining = Math.max(0, parseFloat(budget) - spent);
+  const executionDone = job?.status === "completed";
+
+  const reset = () => {
+    setPhase("form");
+    setJob(null);
+    setError(null);
+  };
 
   return (
     <div>
@@ -94,16 +172,26 @@ export default function AgentMeshHirePage() {
               <h2 className="font-display text-2xl font-bold md:text-3xl">
                 Hire AI Agents
               </h2>
-              <div className="mt-3">
+              <p className="mt-2 text-sm text-muted-foreground">
+                Fund the agent treasury on devnet, then watch OpenRouter-powered
+                specialists execute your task.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
                 {connected ? (
                   <Badge variant="success">Wallet Connected</Badge>
                 ) : (
                   <Badge variant="warn">Connect wallet to launch</Badge>
                 )}
+                <Badge variant="outline">Devnet</Badge>
               </div>
             </div>
-            {/* <WalletMultiButton className="wallet-adapter-button-trigger" /> */}
           </div>
+
+          {error && (
+            <div className="mt-6 border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error}
+            </div>
+          )}
         </>
       )}
 
@@ -121,12 +209,12 @@ export default function AgentMeshHirePage() {
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Budget
+                  Budget (min 0.001 SOL)
                 </label>
                 <div className="mt-2 flex items-center gap-2">
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.001"
                     value={budget}
                     onChange={(e) => setBudget(e.target.value)}
                   />
@@ -149,16 +237,34 @@ export default function AgentMeshHirePage() {
             </div>
             <Button
               className="mt-6 w-full font-mono uppercase tracking-widest"
-              disabled={!connected}
+              disabled={!connected || loading}
               onClick={handleLaunch}
             >
-              Launch Autonomous Team
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Funding & launching...
+                </>
+              ) : (
+                "Launch Autonomous Team"
+              )}
             </Button>
           </div>
         </div>
       )}
 
-      {phase === "executing" && (
+      {phase === "funding" && (
+        <div className="mx-auto mt-8 max-w-lg border border-signal/30 bg-signal/5 p-8 text-center">
+          <Loader2 className="mx-auto size-8 animate-spin text-signal" />
+          <p className="mt-4 font-display text-xl font-bold">Confirming payment</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Approve the devnet transfer in your wallet. This can take up to a
+            minute on devnet.
+          </p>
+        </div>
+      )}
+
+      {phase === "executing" && job && (
         <div className="mt-8">
           <h3 className="font-mono text-[11px] uppercase tracking-widest text-signal">
             Live Execution
@@ -169,11 +275,16 @@ export default function AgentMeshHirePage() {
                 Execution Timeline
               </h4>
               <div className="mt-4">
-                <LiveSteps
-                  steps={hireTimelineSteps}
-                  intervalMs={1100}
-                  onComplete={handleExecutionComplete}
-                />
+                {stepIndex < 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Starting agent pipeline...
+                  </p>
+                ) : (
+                  <LiveSteps
+                    steps={[...job.steps]}
+                    externalIndex={stepIndex}
+                  />
+                )}
               </div>
             </div>
             <div className="border border-grid bg-surface/40 p-5">
@@ -198,7 +309,7 @@ export default function AgentMeshHirePage() {
                     Spent
                   </p>
                   <p className="font-display text-2xl font-bold text-signal">
-                    {spent.toFixed(2)} SOL
+                    {spent.toFixed(4)} SOL
                   </p>
                 </div>
                 <div>
@@ -206,7 +317,7 @@ export default function AgentMeshHirePage() {
                     Remaining
                   </p>
                   <p className="font-display text-2xl font-bold">
-                    {remaining.toFixed(2)} SOL
+                    {remaining.toFixed(4)} SOL
                   </p>
                 </div>
               </div>
@@ -218,12 +329,17 @@ export default function AgentMeshHirePage() {
               Live Logs
             </h4>
             <div className="mt-4 space-y-4">
-              {hireAgentLogs.slice(0, visibleLogs).map((log, i) => (
+              {job.logs.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Waiting for specialist bids from OpenRouter...
+                </p>
+              )}
+              {job.logs.map((log, i) => (
                 <div
-                  key={log.agent}
+                  key={`${log.agent}-${i}`}
                   className={cn(
                     "border border-grid bg-background/40 p-4 animate-step-reveal",
-                    i === visibleLogs - 1 && "border-signal/30"
+                    i === job.logs.length - 1 && "border-signal/30"
                   )}
                 >
                   <p className="font-semibold">{log.agent}</p>
@@ -240,24 +356,23 @@ export default function AgentMeshHirePage() {
                 </div>
               ))}
             </div>
-              {executionDone && (
-                <p className="mt-4 text-center font-mono text-[10px] uppercase tracking-widest text-signal">
-                  Executing EasyA buy on Jupiter...
-                </p>
-              )}
+            {executionDone && (
+              <p className="mt-4 text-center font-mono text-[10px] uppercase tracking-widest text-signal">
+                Executing EasyA buy on Jupiter...
+              </p>
+            )}
           </div>
         </div>
       )}
 
-      {phase === "settlement" && (
+      {phase === "settlement" && job && (
         <div className="mt-8">
           <SettlementScreen
-            onReset={() => {
-              setPhase("form");
-              setGraphPhase("idle");
-              setSpent(0);
-              setVisibleLogs(0);
-            }}
+            onReset={reset}
+            payments={job.settlementPayments}
+            explorerUrl={
+              job.settlementExplorerUrl ?? job.fundingExplorerUrl
+            }
           />
         </div>
       )}

@@ -1,27 +1,76 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink } from "lucide-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { LiveSteps } from "@/components/agent-mesh/live-steps";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { gpuOptions, rentActivitySteps } from "@/lib/agentMeshMockData";
-import { explorerTx } from "@/lib/agentMeshSolana";
+import { gpuOptions } from "@/lib/agentMeshMockData";
+import { getRentJob, listCompute, type RentJobResponse } from "@/lib/agentMeshApi";
 import { AGENT_MESH_BASE } from "@/lib/agentMeshRoutes";
 
 export default function AgentMeshRentPage() {
-  const { connected } = useWallet();
+  const { connected, publicKey } = useWallet();
   const [gpu, setGpu] = useState("RTX 4090");
   const [hours, setHours] = useState("5");
-  const [minPrice, setMinPrice] = useState("0.5");
-  const [maxPrice, setMaxPrice] = useState("0.8");
+  const [minPrice, setMinPrice] = useState("0.001");
+  const [maxPrice, setMaxPrice] = useState("0.01");
   const [listed, setListed] = useState(false);
-  const [completed, setCompleted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [job, setJob] = useState<RentJobResponse | null>(null);
+
+  const pollJob = useCallback(async (jobId: string) => {
+    const { job: next } = await getRentJob(jobId);
+    setJob(next);
+    return next;
+  }, []);
+
+  useEffect(() => {
+    if (!job?.id || job.status === "completed" || job.status === "failed") {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        await pollJob(job.id);
+      } catch (err) {
+        setError((err as Error).message);
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [job?.id, job?.status, pollJob]);
+
+  const handleList = async () => {
+    if (!publicKey) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { job: created } = await listCompute({
+        providerWallet: publicKey.toBase58(),
+        gpu,
+        hours: Number(hours),
+        minPriceSol: Number(minPrice),
+        maxPriceSol: Number(maxPrice),
+      });
+      setJob(created);
+      setListed(true);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const completed = job?.status === "completed";
+  const failed = job?.status === "failed";
 
   return (
     <div>
@@ -38,16 +87,25 @@ export default function AgentMeshRentPage() {
           <h2 className="font-display text-2xl font-bold md:text-3xl">
             Rent Out My Compute
           </h2>
-          <div className="mt-3">
+          <p className="mt-2 text-sm text-muted-foreground">
+            Solana devnet — agent wallet sends a real payout when the job completes.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
             {connected ? (
               <Badge variant="success">Wallet Connected</Badge>
             ) : (
               <Badge variant="warn">Wallet Not Connected</Badge>
             )}
+            <Badge variant="outline">Devnet</Badge>
           </div>
         </div>
-        {/* <WalletMultiButton className="wallet-adapter-button-trigger" /> */}
       </div>
+
+      {error && (
+        <div className="mt-6 border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="border border-grid bg-surface/40 p-6">
@@ -94,7 +152,7 @@ export default function AgentMeshRentPage() {
                 <div className="mt-2 flex items-center gap-2">
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.001"
                     value={minPrice}
                     onChange={(e) => setMinPrice(e.target.value)}
                     disabled={listed}
@@ -109,7 +167,7 @@ export default function AgentMeshRentPage() {
                 <div className="mt-2 flex items-center gap-2">
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.001"
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
                     disabled={listed}
@@ -121,10 +179,17 @@ export default function AgentMeshRentPage() {
 
             <Button
               className="w-full font-mono uppercase tracking-widest"
-              disabled={!connected || listed}
-              onClick={() => setListed(true)}
+              disabled={!connected || listed || loading}
+              onClick={handleList}
             >
-              List Compute
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Listing...
+                </>
+              ) : (
+                "List Compute"
+              )}
             </Button>
           </div>
         </div>
@@ -134,38 +199,50 @@ export default function AgentMeshRentPage() {
             Live Activity
           </h3>
           <div className="mt-4 border border-grid bg-surface/40 p-6">
-            {!listed ? (
+            {!listed || !job ? (
               <p className="text-sm text-muted-foreground">
-                List your compute to see live agent activity.
+                List your compute to see live agent activity and a devnet payout.
               </p>
             ) : (
-              <LiveSteps
-                steps={rentActivitySteps}
-                intervalMs={1400}
-                onComplete={() => setCompleted(true)}
-              />
+              <>
+                <LiveSteps
+                  steps={[...job.steps]}
+                  externalIndex={job.currentStepIndex}
+                />
+                {job.negotiationNote && (
+                  <p className="mt-4 text-sm italic text-muted-foreground">
+                    &ldquo;{job.negotiationNote}&rdquo;
+                  </p>
+                )}
+              </>
             )}
           </div>
 
-          {completed && (
+          {failed && job?.error && (
+            <div className="mt-6 border border-destructive/50 bg-destructive/10 p-6 text-sm">
+              Job failed: {job.error}
+            </div>
+          )}
+
+          {completed && job && (
             <div className="mt-6 border border-signal/30 bg-signal/5 p-6">
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Earnings
+                Earnings (devnet)
               </p>
               <p className="mt-2 font-display text-4xl font-bold text-signal">
-                0.62 SOL
+                {job.payoutSol?.toFixed(4) ?? "0.001"} SOL
               </p>
-              <a
-                href={explorerTx(
-                  "5Kp2nR8vXm3qL7wY9tF2hJ4kN6pR1sT8uV0xZ3aB5cD7eF9gH2iJ4kL6mN8oP0q"
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-signal hover:underline"
-              >
-                View on Solana Explorer
-                <ExternalLink className="size-3" />
-              </a>
+              {job.explorerUrl && (
+                <a
+                  href={job.explorerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-signal hover:underline"
+                >
+                  View payout on Solana Explorer
+                  <ExternalLink className="size-3" />
+                </a>
+              )}
             </div>
           )}
         </div>

@@ -9,6 +9,8 @@ interface LiveStepsProps {
   intervalMs?: number;
   onComplete?: () => void;
   autoStart?: boolean;
+  /** Server-driven step index (overrides internal timer when set). */
+  externalIndex?: number;
 }
 
 export function LiveSteps({
@@ -16,10 +18,17 @@ export function LiveSteps({
   intervalMs = 1200,
   onComplete,
   autoStart = true,
+  externalIndex,
 }: LiveStepsProps) {
-  const [activeIndex, setActiveIndex] = useState(autoStart ? 0 : -1);
+  const [activeIndex, setActiveIndex] = useState(
+    externalIndex ?? (autoStart ? 0 : -1)
+  );
+
+  const isServerDriven = externalIndex !== undefined;
+  const currentIndex = isServerDriven ? externalIndex : activeIndex;
 
   useEffect(() => {
+    if (isServerDriven) return;
     if (!autoStart || activeIndex < 0) return;
 
     if (activeIndex >= steps.length - 1) {
@@ -32,20 +41,34 @@ export function LiveSteps({
     }, intervalMs);
 
     return () => clearTimeout(timer);
-  }, [activeIndex, steps.length, intervalMs, onComplete, autoStart]);
+  }, [
+    activeIndex,
+    steps.length,
+    intervalMs,
+    onComplete,
+    autoStart,
+    isServerDriven,
+  ]);
 
-  if (activeIndex < 0) return null;
+  useEffect(() => {
+    if (!isServerDriven) return;
+    if (externalIndex >= steps.length - 1) {
+      onComplete?.();
+    }
+  }, [externalIndex, steps.length, onComplete, isServerDriven]);
+
+  if (currentIndex < 0) return null;
 
   return (
     <div className="space-y-2">
       {steps.map((step, i) => {
-        const isComplete = i < activeIndex;
-        const isActive = i === activeIndex;
-        const isPending = i > activeIndex;
+        const isComplete = i < currentIndex;
+        const isActive = i === currentIndex;
+        const isPending = i > currentIndex;
 
         return (
           <div
-            key={step}
+            key={`${step}-${i}`}
             className={cn(
               "flex items-center gap-3 border px-4 py-3 transition-all duration-500",
               isPending && "opacity-30 border-grid bg-background/40",
@@ -56,7 +79,8 @@ export function LiveSteps({
             <div
               className={cn(
                 "flex size-5 shrink-0 items-center justify-center rounded-full border-2",
-                (isComplete || isActive) && "border-signal bg-signal text-primary-foreground",
+                (isComplete || isActive) &&
+                  "border-signal bg-signal text-primary-foreground",
                 isPending && "border-grid bg-background/40"
               )}
             >
