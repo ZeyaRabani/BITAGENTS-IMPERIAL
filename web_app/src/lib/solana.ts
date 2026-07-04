@@ -1,17 +1,38 @@
-export const SOLANA_NETWORK = "devnet" as const;
+import { solToLamports } from "@bitagents/shared";
+import { PublicKey, SystemProgram, Transaction, type Connection } from "@solana/web3.js";
 
-export const SOLANA_RPC_ENDPOINT =
-  process.env.NEXT_PUBLIC_SOLANA_RPC_URL ??
-  "https://api.devnet.solana.com";
+export function getTreasuryPublicKey(): PublicKey {
+  const value = process.env.NEXT_PUBLIC_TREASURY_PUBLIC_KEY;
+  if (!value || value.includes("REPLACE_WITH")) {
+    throw new Error("Set NEXT_PUBLIC_TREASURY_PUBLIC_KEY in .env.local before sending devnet SOL.");
+  }
 
-export function explorerAddress(address: string) {
-  return `https://explorer.solana.com/address/${address}?cluster=devnet`;
+  return new PublicKey(value);
 }
 
-export function explorerTx(signature: string) {
-  return `https://explorer.solana.com/tx/${signature}?cluster=devnet`;
-}
+export async function sendSolTransfer({
+  connection,
+  from,
+  to,
+  amountSol,
+  sendTransaction
+}: {
+  connection: Connection;
+  from: PublicKey;
+  to: PublicKey;
+  amountSol: number;
+  sendTransaction: (transaction: Transaction, connection: Connection) => Promise<string>;
+}) {
+  const transaction = new Transaction().add(
+    SystemProgram.transfer({
+      fromPubkey: from,
+      toPubkey: to,
+      lamports: solToLamports(amountSol)
+    })
+  );
 
-export function truncateAddress(address: string, chars = 4) {
-  return `${address.slice(0, chars)}...${address.slice(-chars)}`;
+  const signature = await sendTransaction(transaction, connection);
+  const latest = await connection.getLatestBlockhash("confirmed");
+  await connection.confirmTransaction({ signature, ...latest }, "confirmed");
+  return signature;
 }

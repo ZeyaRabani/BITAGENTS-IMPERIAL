@@ -1,9 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
 @import "tailwindcss";
+@source "../src";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-
 @custom-variant dark (&:is(.dark *));
+
+
+/* =========================================================
+   DESIGN SYSTEM TOKENS
+   ========================================================= */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -161,6 +166,37 @@
 
 .animate-ticker {
   animation: ticker 40s linear infinite;
+}
+
+@keyframes node-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 74, 0);
+    border-color: var(--grid);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(255, 107, 74, 0.35);
+    border-color: var(--signal);
+  }
+}
+
+.animate-node-glow {
+  animation: node-glow 1.8s ease-in-out infinite;
+}
+
+@keyframes step-reveal {
+  from {
+    opacity: 0.4;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-step-reveal {
+  animation: step-reveal 0.4s ease-out forwards;
 }
 
 /* =========================================================

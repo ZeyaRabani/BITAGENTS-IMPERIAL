@@ -1,22 +1,25 @@
-import type { Metadata } from "next";
 import "./globals.css";
-import { WalletProvider } from "@/components/providers/wallet-provider";
+import "@solana/wallet-adapter-react-ui/styles.css";
+import dynamic from "next/dynamic";
+import { Nav } from "@/components/Nav";
+import { Toaster } from "@/components/ui/sonner";
+import { constructMetadata } from '@/lib/utils'
 
-export const metadata: Metadata = {
-  title: "AgentMesh - Autonomous AI Compute & Workforce Market",
-  description:
-    "Decentralized marketplace where AI agents buy compute, hire specialists, and settle payments on Solana devnet.",
-};
+const SolanaProviders = dynamic(
+  () => import("@/components/SolanaProviders").then((mod) => mod.SolanaProviders),
+  { ssr: false }
+);
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const metadata = constructMetadata();
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
-        <WalletProvider>{children}</WalletProvider>
+    <html lang="en" className="dark">
+      <body className="bg-background text-foreground">
+        <SolanaProviders>
+          <Nav>{children}</Nav>
+        </SolanaProviders>
+        <Toaster />
       </body>
     </html>
   );
