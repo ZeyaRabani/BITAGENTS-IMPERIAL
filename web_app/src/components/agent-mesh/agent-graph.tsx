@@ -7,14 +7,14 @@ interface AgentGraphProps {
 }
 
 const nodes = {
-  planner: { label: "Planner", row: 0 },
-  copy: { label: "Copy", row: 1, col: 0 },
-  design: { label: "Design", row: 1, col: 1 },
-  frontend: { label: "Frontend", row: 1, col: 2 },
-  broker: { label: "Compute Broker", row: 2 },
-  gpu1: { label: "GPU1", row: 3, col: 0 },
-  gpu2: { label: "GPU2", row: 3, col: 1 },
-  gpu3: { label: "GPU3", row: 3, col: 2 },
+  planner: { label: "Planner" },
+  research: { label: "Research" },
+  analysis: { label: "Token Analysis" },
+  trade: { label: "Trade Agent" },
+  router: { label: "Swap Router" },
+  jupiter: { label: "Jupiter" },
+  raydium: { label: "Raydium" },
+  orca: { label: "Orca" },
 };
 
 function GraphNode({
@@ -45,8 +45,8 @@ export function AgentGraph({ phase }: AgentGraphProps) {
   const plannerDone = ["specialists", "compute", "done"].includes(phase);
   const specialistsActive = phase === "specialists";
   const specialistsDone = ["compute", "done"].includes(phase);
-  const computeActive = phase === "compute";
-  const computeDone = phase === "done";
+  const executionActive = phase === "compute";
+  const executionDone = phase === "done";
 
   return (
     <div className="flex flex-col items-center gap-4 py-4">
@@ -60,17 +60,17 @@ export function AgentGraph({ phase }: AgentGraphProps) {
 
       <div className="grid w-full grid-cols-3 gap-3">
         <GraphNode
-          label={nodes.copy.label}
+          label={nodes.research.label}
           active={specialistsActive}
           done={specialistsDone}
         />
         <GraphNode
-          label={nodes.design.label}
+          label={nodes.analysis.label}
           active={specialistsActive}
           done={specialistsDone}
         />
         <GraphNode
-          label={nodes.frontend.label}
+          label={nodes.trade.label}
           active={specialistsActive}
           done={specialistsDone}
         />
@@ -79,28 +79,28 @@ export function AgentGraph({ phase }: AgentGraphProps) {
       <div className="h-6 w-px bg-border" />
 
       <GraphNode
-        label={nodes.broker.label}
-        active={computeActive}
-        done={computeDone}
+        label={nodes.router.label}
+        active={executionActive}
+        done={executionDone}
       />
 
       <div className="h-6 w-px bg-border" />
 
       <div className="grid w-full grid-cols-3 gap-3">
         <GraphNode
-          label={nodes.gpu1.label}
-          active={computeActive}
-          done={computeDone}
+          label={nodes.jupiter.label}
+          active={executionActive}
+          done={executionDone}
         />
         <GraphNode
-          label={nodes.gpu2.label}
-          active={computeActive}
-          done={computeDone}
+          label={nodes.raydium.label}
+          active={executionActive}
+          done={executionDone}
         />
         <GraphNode
-          label={nodes.gpu3.label}
-          active={computeActive}
-          done={computeDone}
+          label={nodes.orca.label}
+          active={executionActive}
+          done={executionDone}
         />
       </div>
     </div>

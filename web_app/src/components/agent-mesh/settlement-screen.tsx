@@ -18,9 +18,9 @@ export function SettlementScreen({ onReset }: SettlementScreenProps) {
         <div className="mx-auto flex size-16 items-center justify-center rounded-full border-2 border-signal bg-signal/20">
           <Check className="size-8 text-signal" />
         </div>
-        <h2 className="mt-6 font-display text-3xl font-bold">Task Completed</h2>
+        <h2 className="mt-6 font-display text-3xl font-bold">Buy Order Completed</h2>
         <p className="mt-2 font-mono text-[11px] uppercase tracking-widest text-signal">
-          Payment Released
+          EasyA Purchase Settled
         </p>
       </div>
 

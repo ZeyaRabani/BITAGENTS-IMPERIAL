@@ -38,7 +38,7 @@ export default function AgentMeshHomePage() {
           <Users className="size-8 text-signal transition-transform group-hover:scale-110" />
           <h3 className="mt-6 font-display text-xl font-bold">Hire AI Agents</h3>
           <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-            Describe your task and your budget. We&apos;ll handle everything.
+            Set a budget and goal. Agents research, analyze, and execute the buy for you.
           </p>
           <span className="mt-6 font-mono text-[10px] uppercase tracking-widest text-signal">
             Launch Team →

@@ -22,10 +22,11 @@ export default function AgentMeshHirePage() {
   const { connected } = useWallet();
   const [phase, setPhase] = useState<Phase>("form");
   const [task, setTask] = useState(
-    "Build me a SaaS landing page with React and Tailwind.\nNeed it in under 5 hours."
+    "Buy EasyA token - it shows strong long-term potential.\n" +
+      "Hire agents to run market research and token analysis, then place a buy order if conviction holds."
   );
   const [budget, setBudget] = useState("0.5");
-  const [deadline, setDeadline] = useState("5");
+  const [deadline, setDeadline] = useState("24");
   const [graphPhase, setGraphPhase] = useState<
     "idle" | "planning" | "specialists" | "compute" | "done"
   >("idle");
@@ -110,7 +111,7 @@ export default function AgentMeshHirePage() {
         <div className="mx-auto mt-8 max-w-2xl">
           <div className="border border-grid bg-surface/40 p-6">
             <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              Describe your task
+              Describe your investment task
             </label>
             <Textarea
               className="mt-2 min-h-[140px]"
@@ -239,11 +240,11 @@ export default function AgentMeshHirePage() {
                 </div>
               ))}
             </div>
-            {executionDone && (
-              <p className="mt-4 text-center font-mono text-[10px] uppercase tracking-widest text-signal">
-                Finalizing settlement...
-              </p>
-            )}
+              {executionDone && (
+                <p className="mt-4 text-center font-mono text-[10px] uppercase tracking-widest text-signal">
+                  Executing EasyA buy on Jupiter...
+                </p>
+              )}
           </div>
         </div>
       )}

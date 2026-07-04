@@ -231,11 +231,11 @@ export const dashboardStats = {
 
 export const dashboardCharts = {
   agentSpending: [
-    { label: "Frontend", value: 2.1 },
-    { label: "Design", value: 1.8 },
-    { label: "Copy", value: 1.2 },
-    { label: "QA", value: 0.9 },
-    { label: "Research", value: 0.7 },
+    { label: "Research", value: 2.1 },
+    { label: "Analysis", value: 1.8 },
+    { label: "Trade", value: 1.5 },
+    { label: "Planner", value: 0.9 },
+    { label: "Swap", value: 0.7 },
   ],
   computeUsage: [
     { label: "Mon", value: 6 },
@@ -247,11 +247,11 @@ export const dashboardCharts = {
     { label: "Sun", value: 2 },
   ],
   averageBid: [
-    { label: "Copy", value: 0.08 },
-    { label: "Design", value: 0.12 },
-    { label: "Frontend", value: 0.15 },
-    { label: "QA", value: 0.06 },
-    { label: "GPU", value: 0.03 },
+    { label: "Research", value: 0.10 },
+    { label: "Analysis", value: 0.12 },
+    { label: "Trade", value: 0.15 },
+    { label: "Planner", value: 0.04 },
+    { label: "Swap", value: 0.03 },
   ],
   revenue: [
     { label: "W1", value: 1.2 },
@@ -275,45 +275,40 @@ export const rentActivitySteps = [
 
 export const hireTimelineSteps = [
   "Planner Agent started",
-  "Finding specialists...",
-  "4 Agents discovered",
+  "Scoping EasyA buy thesis...",
+  "3 Agents discovered",
   "Negotiating...",
-  "Copy Agent accepted",
-  "Designer accepted",
-  "Frontend accepted",
-  "QA accepted",
+  "Research Agent accepted",
+  "Token Analysis accepted",
+  "Trade Agent accepted",
+  "Buy order placed",
 ];
 
 export const hireAgentLogs = [
   {
-    agent: "Copy Agent",
-    bid: "0.08 SOL",
-    reasoning: "I can deliver in 4 minutes.",
+    agent: "Research Agent",
+    bid: "0.10 SOL",
+    reasoning: "EasyA shows rising holder growth and healthy liquidity depth.",
   },
   {
-    agent: "Designer",
+    agent: "Token Analysis Agent",
     bid: "0.12 SOL",
-    reasoning: "I already have cached assets.",
+    reasoning: "On-chain health score 82/100 - long-term thesis intact.",
   },
   {
-    agent: "Frontend",
+    agent: "Trade Agent",
     bid: "0.15 SOL",
-    reasoning: "Lowest latency.",
-  },
-  {
-    agent: "QA Agent",
-    bid: "0.06 SOL",
-    reasoning: "Standard verification pass.",
+    reasoning: "Best Jupiter route found; slippage under 0.5%.",
   },
 ];
 
 export const settlementPayments = [
   { label: "Customer", amount: null },
   { label: "Planner", amount: null },
-  { label: "Copy Agent", amount: "0.08 SOL" },
-  { label: "Design Agent", amount: "0.12 SOL" },
-  { label: "Frontend", amount: "0.15 SOL" },
-  { label: "GPU Provider", amount: "0.06 SOL" },
+  { label: "Research Agent", amount: "0.10 SOL" },
+  { label: "Token Analysis Agent", amount: "0.12 SOL" },
+  { label: "Trade Agent", amount: "0.15 SOL" },
+  { label: "Jupiter Swap Fee", amount: "0.04 SOL" },
 ];
 
 export const DEMO_TX_SIGNATURE =
