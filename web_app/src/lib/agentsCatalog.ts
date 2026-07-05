@@ -42,7 +42,11 @@ export type MarketplaceAgent = {
   available: boolean;
   model?: string;
   cluster?: string;
+  /** When set, card links out instead of /agents/[slug] */
+  externalUrl?: string;
 };
+
+export const DCA_AGENT_URL = "https://bitagents.app/agents/dca";
 
 export const MARKETPLACE_STATS = {
   liveAgents: "2",
@@ -73,6 +77,7 @@ export const FEATURED_AGENTS: MarketplaceAgent[] = [
     rating: 4.9,
     iconId: "swap",
     available: true,
+    externalUrl: DCA_AGENT_URL,
     model: "meta-llama/llama-3.3-70b-instruct",
     cluster: "mainnet",
   },

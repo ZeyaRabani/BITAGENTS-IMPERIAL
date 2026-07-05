@@ -1,4 +1,15 @@
-export interface RentJobResponse {
+export interface CoralSessionFields {
+  coralSessionId: string;
+  coralTemplate: string;
+  coralServerUrl: string;
+  coralConsoleUrl: string;
+  coralMcpUrl: string;
+  coralTtlMinutes: number;
+  coralEscrowPhase: string;
+  coralAgents: string[];
+}
+
+export interface RentJobResponse extends CoralSessionFields {
   id: string;
   providerWallet: string;
   gpu: string;
@@ -21,7 +32,7 @@ export interface HireAgentLog {
   reasoning: string;
 }
 
-export interface HireJobResponse {
+export interface HireJobResponse extends CoralSessionFields {
   id: string;
   customerWallet: string;
   task: string;

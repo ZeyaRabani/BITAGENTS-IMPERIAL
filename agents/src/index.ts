@@ -25,6 +25,12 @@ app.get("/health", async (_req, res) => {
       agentWallet: getAgentPublicKey(),
       balanceSol: balance,
       model: config.openRouterModel,
+      coral: {
+        serverUrl: config.coralServerUrl,
+        consoleUrl: `${config.coralServerUrl.replace(/\/$/, "")}/ui/console`,
+        sessionTtlMinutes: config.coralSessionTtlMinutes,
+        orchestration: "CoralOS multi-agent sessions",
+      },
     });
   } catch (err) {
     res.status(500).json({ ok: false, error: (err as Error).message });

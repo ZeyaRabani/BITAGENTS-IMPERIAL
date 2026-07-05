@@ -1,9 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { HIRE_STEPS, RENT_STEPS } from "./config.js";
+import {
+  createCoralSession,
+  type CoralSessionMeta,
+} from "./coral.js";
 
 export type JobStatus = "pending" | "running" | "completed" | "failed";
 
-export interface RentJob {
+export interface RentJob extends CoralSessionMeta {
   id: string;
   providerWallet: string;
   gpu: string;
@@ -27,7 +31,7 @@ export interface HireAgentLog {
   reasoning: string;
 }
 
-export interface HireJob {
+export interface HireJob extends CoralSessionMeta {
   id: string;
   customerWallet: string;
   task: string;
@@ -63,6 +67,11 @@ export function createRentJob(input: {
   const job: RentJob = {
     id: randomUUID(),
     ...input,
+    ...createCoralSession("gpu-spot-listing", [
+      "Planner Agent",
+      "Compute Matcher",
+      "Escrow Agent",
+    ]),
     status: "pending",
     steps: RENT_STEPS,
     currentStepIndex: 0,
@@ -93,6 +102,12 @@ export function createHireJob(input: {
   const job: HireJob = {
     id: randomUUID(),
     ...input,
+    ...createCoralSession("easya-buy-swarm", [
+      "Planner Agent",
+      "Research Agent",
+      "Token Analysis Agent",
+      "Trade Agent",
+    ]),
     status: "awaiting_funding",
     steps: HIRE_STEPS,
     currentStepIndex: -1,

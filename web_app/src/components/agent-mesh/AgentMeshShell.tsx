@@ -23,10 +23,14 @@ export function AgentMeshShell({ children }: { children: ReactNode }) {
             Agent<span className="text-signal">Mesh</span>
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Autonomous AI compute &amp; workforce market · Solana escrow
+            Autonomous AI compute &amp; workforce market · CoralOS orchestration ·
+            Solana escrow
           </p>
         </div>
-        <BadgeDevnet />
+        <div className="flex flex-wrap items-center gap-2">
+          <BadgeDevnet />
+          <CoralBadge />
+        </div>
       </div>
 
       <div className="flex flex-col gap-8 lg:flex-row">
@@ -62,6 +66,19 @@ function BadgeDevnet() {
     <span className="inline-flex border border-grid bg-surface/40 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
       Devnet
     </span>
+  );
+}
+
+function CoralBadge() {
+  return (
+    <a
+      href="https://docs.coralos.ai/guides/quickstart"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex border border-signal/40 bg-signal/10 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-signal transition hover:bg-signal/20"
+    >
+      Powered by CoralOS
+    </a>
   );
 }
 

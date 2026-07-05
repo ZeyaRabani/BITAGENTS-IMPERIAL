@@ -22,6 +22,8 @@ import {
   type HireJobResponse,
 } from "@/lib/agentMeshApi";
 import { sendDevnetSol, fundHireTaskWithRetry, waitForSignature } from "@/lib/agentMeshSolanaClient";
+import { coralSessionFromJob } from "@/lib/coralOs";
+import { CoralSessionPanel } from "@/components/agent-mesh/coral-session-panel";
 import { AGENT_MESH_BASE } from "@/lib/agentMeshRoutes";
 import { cn } from "@/lib/utils";
 
@@ -30,9 +32,9 @@ type Phase = "form" | "funding" | "executing" | "settlement";
 function graphPhaseFromStep(
   index: number
 ): "idle" | "planning" | "specialists" | "compute" | "done" {
-  if (index < 4) return "planning";
-  if (index < 7) return "specialists";
-  if (index === 7) return "compute";
+  if (index < 5) return "planning";
+  if (index < 8) return "specialists";
+  if (index === 8) return "compute";
   return "done";
 }
 
@@ -173,8 +175,8 @@ export default function AgentMeshHirePage() {
                 Hire AI Agents
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Fund the agent treasury on devnet, then watch OpenRouter-powered
-                specialists execute your task.
+                CoralOS orchestrates the agent graph; OpenRouter powers specialist
+                reasoning. Fund the treasury on devnet to start the session.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {connected ? (
@@ -266,7 +268,12 @@ export default function AgentMeshHirePage() {
 
       {phase === "executing" && job && (
         <div className="mt-8">
-          <h3 className="font-mono text-[11px] uppercase tracking-widest text-signal">
+          <CoralSessionPanel
+            session={coralSessionFromJob(job, "hire")}
+            status={job.status === "completed" ? "completed" : "active"}
+          />
+
+          <h3 className="mt-8 font-mono text-[11px] uppercase tracking-widest text-signal">
             Live Execution
           </h3>
           <div className="mt-6 grid gap-6 lg:grid-cols-3">
@@ -289,7 +296,7 @@ export default function AgentMeshHirePage() {
             </div>
             <div className="border border-grid bg-surface/40 p-5">
               <h4 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Live Agent Graph
+                CoralOS Agent Graph
               </h4>
               <AgentGraph phase={graphPhase} />
             </div>
@@ -369,6 +376,7 @@ export default function AgentMeshHirePage() {
         <div className="mt-8">
           <SettlementScreen
             onReset={reset}
+            subtitle="EasyA Purchase Settled via CoralOS"
             payments={job.settlementPayments}
             explorerUrl={
               job.settlementExplorerUrl ?? job.fundingExplorerUrl

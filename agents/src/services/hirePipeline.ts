@@ -7,13 +7,14 @@ import {
 } from "../store.js";
 import { explorerTxUrl, verifySolTransfer } from "../solana.js";
 import { getAgentPublicKey } from "../solana.js";
+import { hireEscrowPhase } from "../coral.js";
 
 const STEP_DELAY_MS = 1100;
 
 const SPECIALISTS = [
-  { agent: "Research Agent", bid: "0.001 SOL", role: "Research Agent", stepIndex: 4 },
-  { agent: "Token Analysis Agent", bid: "0.0012 SOL", role: "Token Analysis Agent", stepIndex: 5 },
-  { agent: "Trade Agent", bid: "0.0015 SOL", role: "Trade Agent", stepIndex: 6 },
+  { agent: "Research Agent", bid: "0.001 SOL", role: "Research Agent", stepIndex: 5 },
+  { agent: "Token Analysis Agent", bid: "0.0012 SOL", role: "Token Analysis Agent", stepIndex: 6 },
+  { agent: "Trade Agent", bid: "0.0015 SOL", role: "Trade Agent", stepIndex: 7 },
 ] as const;
 
 function sleep(ms: number) {
@@ -54,6 +55,7 @@ export async function verifyHireFunding(
     customerWallet,
     status: "running",
     currentStepIndex: 0,
+    coralEscrowPhase: "WANT",
   });
 
   void runHirePipeline(jobId);
@@ -67,7 +69,10 @@ async function runHirePipeline(jobId: string) {
   try {
     for (let i = 1; i < initial.steps.length; i++) {
       await sleep(STEP_DELAY_MS);
-      updateHireJob(jobId, { currentStepIndex: i });
+      updateHireJob(jobId, {
+        currentStepIndex: i,
+        coralEscrowPhase: hireEscrowPhase(i, "running"),
+      });
 
       const specialist = SPECIALISTS.find((s) => s.stepIndex === i);
       if (specialist) {
@@ -100,6 +105,7 @@ async function runHirePipeline(jobId: string) {
       ],
       settlementSignature: final.fundingSignature,
       status: "completed",
+      coralEscrowPhase: "RELEASED",
     });
   } catch (err) {
     updateHireJob(jobId, {

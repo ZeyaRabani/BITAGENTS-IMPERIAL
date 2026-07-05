@@ -11,6 +11,8 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { gpuOptions } from "@/lib/agentMeshMockData";
 import { getRentJob, listCompute, type RentJobResponse } from "@/lib/agentMeshApi";
+import { coralSessionFromJob } from "@/lib/coralOs";
+import { CoralSessionPanel } from "@/components/agent-mesh/coral-session-panel";
 import { AGENT_MESH_BASE } from "@/lib/agentMeshRoutes";
 
 export default function AgentMeshRentPage() {
@@ -88,7 +90,7 @@ export default function AgentMeshRentPage() {
             Rent Out My Compute
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Solana devnet — agent wallet sends a real payout when the job completes.
+            Solana devnet — CoralOS matches agents to your GPU, then sends a real payout.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {connected ? (
@@ -217,6 +219,21 @@ export default function AgentMeshRentPage() {
               </>
             )}
           </div>
+
+          {job && listed && (
+            <div className="mt-6">
+              <CoralSessionPanel
+                session={coralSessionFromJob(job, "rent")}
+                status={
+                  job.status === "completed"
+                    ? "completed"
+                    : job.status === "pending"
+                      ? "awaiting"
+                      : "active"
+                }
+              />
+            </div>
+          )}
 
           {failed && job?.error && (
             <div className="mt-6 border border-destructive/50 bg-destructive/10 p-6 text-sm">

@@ -226,6 +226,7 @@ export const dashboardStats = {
   solSettled: "8.42",
   agentsHired: 102,
   computeJobs: 51,
+  coralSessions: 19,
   successRate: 99,
 };
 

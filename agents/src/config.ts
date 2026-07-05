@@ -19,14 +19,17 @@ export const config = {
   rentPayoutSol: num("RENT_PAYOUT_SOL", 0.001),
   hireMinBudgetSol: num("HIRE_MIN_BUDGET_SOL", 0.001),
   hireMaxBudgetSol: num("HIRE_MAX_BUDGET_SOL", 0.05),
+  coralServerUrl: process.env.CORAL_SERVER_URL ?? "http://localhost:5555",
+  coralSessionTtlMinutes: num("CORAL_SESSION_TTL_MINUTES", 60),
 };
 
 export const RENT_STEPS = [
   "Compute Listed",
+  "CoralOS session created",
   "Planner Agent searching...",
-  "Offer received...",
+  "Offer received (BID)...",
   "Negotiating...",
-  "Accepted",
+  "Accepted (AWARD)",
   "Escrow Created",
   "Running inference...",
   "Job Completed",
@@ -34,10 +37,11 @@ export const RENT_STEPS = [
 ] as const;
 
 export const HIRE_STEPS = [
+  "CoralOS session created",
   "Planner Agent started",
   "Scoping EasyA buy thesis...",
   "3 Agents discovered",
-  "Negotiating...",
+  "Negotiating (WANT → BID)...",
   "Research Agent accepted",
   "Token Analysis accepted",
   "Trade Agent accepted",

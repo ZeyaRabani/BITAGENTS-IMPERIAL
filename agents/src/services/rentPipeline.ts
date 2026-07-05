@@ -5,6 +5,7 @@ import {
   updateRentJob,
   type RentJob,
 } from "../store.js";
+import { rentEscrowPhase } from "../coral.js";
 import {
   explorerTxUrl,
   getAgentBalanceSol,
@@ -31,7 +32,10 @@ export async function runRentPipeline(jobId: string) {
   try {
     for (let i = 1; i < job.steps.length; i++) {
       await sleep(STEP_DELAY_MS);
-      updateRentJob(jobId, { currentStepIndex: i });
+      updateRentJob(jobId, {
+        currentStepIndex: i,
+        coralEscrowPhase: rentEscrowPhase(i, "running"),
+      });
 
       if (job.steps[i] === "Negotiating...") {
         try {
@@ -57,6 +61,7 @@ export async function runRentPipeline(jobId: string) {
           payoutSol: amount,
           paymentSignature: signature,
           status: "completed",
+          coralEscrowPhase: "RELEASED",
         });
         return;
       }

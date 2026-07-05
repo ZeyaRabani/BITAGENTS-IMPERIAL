@@ -59,14 +59,14 @@ function fallbackReasoning(prompt: string): string {
 
 export async function plannerNegotiation(gpu: string, maxPrice: number) {
   return openRouterChat(
-    "You are a CoralOS planner agent negotiating GPU compute on Solana. Reply in one short sentence, no quotes.",
-    `Negotiate a compute job for ${gpu}. Provider max price ${maxPrice} SOL. Confirm acceptance.`
+    "You are a CoralOS planner agent coordinating GPU compute via Coral Server sessions. Reply in one short sentence, no quotes.",
+    `Negotiate a compute job for ${gpu}. Provider max price ${maxPrice} SOL. Confirm acceptance via WANT → BID → AWARD.`
   );
 }
 
 export async function specialistBid(agentRole: string, task: string) {
   const text = await openRouterChat(
-    `You are the ${agentRole} in an autonomous agent marketplace. Reply with ONE short reasoning sentence for your bid (no quotes, max 20 words).`,
+    `You are the ${agentRole} in a CoralOS multi-agent session (MCP-connected). Reply with ONE short reasoning sentence for your bid (no quotes, max 20 words).`,
     `Task: ${task}`
   );
   return text;

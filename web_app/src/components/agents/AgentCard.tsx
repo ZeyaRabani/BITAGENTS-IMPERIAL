@@ -70,8 +70,18 @@ export function AgentCard({ agent }: { agent: MarketplaceAgent }) {
   );
 
   if (agent.available) {
+    const href = agent.externalUrl ?? `/agents/${agent.slug}`;
+
+    if (agent.externalUrl) {
+      return (
+        <a href={href} className="block h-full">
+          {inner}
+        </a>
+      );
+    }
+
     return (
-      <Link href={`/agents/${agent.slug}`} className="block h-full">
+      <Link href={href} className="block h-full">
         {inner}
       </Link>
     );
